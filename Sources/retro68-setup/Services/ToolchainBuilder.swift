@@ -38,6 +38,11 @@ actor ToolchainBuilder {
         // See: https://github.com/autc04/Retro68/issues/301
         onOutput("Applying Boost compatibility patches...\n")
         try applyBoostPatches()
+
+        // Patch sample CMakeLists.txt files to add cmake_minimum_required
+        // CMake 3.12+ requires this at the top of standalone CMakeLists.txt files
+        onOutput("Applying sample CMakeLists.txt patches...\n")
+        try applySamplePatches()
         onOutput("Patches applied.\n")
 
         // Create cmake initial cache to force correct bison path
@@ -144,6 +149,42 @@ actor ToolchainBuilder {
 
         if content != originalContent {
             try content.write(to: scriptPath, atomically: true, encoding: .utf8)
+        }
+    }
+
+    /// Patches sample CMakeLists.txt files to add cmake_minimum_required
+    /// CMake 3.12+ requires this at the top of standalone CMakeLists.txt files
+    nonisolated private func applySamplePatches() throws {
+        let samplesDir = Paths.sourceDir.appendingPathComponent("Samples")
+        let samples = [
+            "Dialog",
+            "HelloWorld",
+            "Launcher",
+            "MPWTool",
+            "Raytracer",
+            "SharedLibrary",
+            "SystemExtension",
+            "WDEF"
+        ]
+
+        let cmakeMinRequired = "cmake_minimum_required(VERSION 3.9)\n"
+
+        for sample in samples {
+            let filePath = samplesDir
+                .appendingPathComponent(sample)
+                .appendingPathComponent("CMakeLists.txt")
+
+            guard Paths.exists(filePath) else {
+                continue
+            }
+
+            var content = try String(contentsOf: filePath, encoding: .utf8)
+
+            // Only add if not already present
+            if !content.contains("cmake_minimum_required") {
+                content = cmakeMinRequired + content
+                try content.write(to: filePath, atomically: true, encoding: .utf8)
+            }
         }
     }
 

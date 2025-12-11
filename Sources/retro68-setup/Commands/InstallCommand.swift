@@ -172,7 +172,6 @@ struct InstallCommand: AsyncParsableCommand {
 
         print("")
         print("Cloning Retro68 repository...")
-        print("This may take several minutes depending on your connection.")
         print("")
 
         do {
@@ -346,7 +345,6 @@ struct InstallCommand: AsyncParsableCommand {
         if rebuildOnly {
             print("Rebuilding Retro68-specific components only (skipping GCC/binutils)...")
         } else {
-            print("This will take a LONG time (potentially 1-2 hours or more).")
             print("The build includes GCC, binutils, and all Retro68 components.")
         }
 

@@ -63,7 +63,7 @@ The interactive installer will:
    - **PowerPC** - Power Macintosh with classic Mac OS
    - **Carbon** - PowerPC with Carbon API (Mac OS 8.1+)
 
-4. **Build the toolchain** - This takes a long time (1-2+ hours) as it compiles GCC, binutils, and all Retro68 components
+4. **Build the toolchain** - Compiles GCC, binutils, and all Retro68 components
 
 #### Install Options
 
