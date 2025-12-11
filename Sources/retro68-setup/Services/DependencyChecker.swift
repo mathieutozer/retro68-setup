@@ -4,18 +4,20 @@ struct Dependency {
     let name: String
     let brewPackage: String
     let checkCommand: String?
+    let requiredVersion: String?  // Minimum version required, nil means any version
     let required: Bool
 
     static let all: [Dependency] = [
-        Dependency(name: "Homebrew", brewPackage: "", checkCommand: "brew --version", required: true),
-        Dependency(name: "CMake", brewPackage: "cmake", checkCommand: "cmake --version", required: true),
-        Dependency(name: "Boost", brewPackage: "boost", checkCommand: nil, required: true),
-        Dependency(name: "GMP", brewPackage: "gmp", checkCommand: nil, required: true),
-        Dependency(name: "MPFR", brewPackage: "mpfr", checkCommand: nil, required: true),
-        Dependency(name: "MPC", brewPackage: "libmpc", checkCommand: nil, required: true),
-        Dependency(name: "Bison", brewPackage: "bison", checkCommand: "bison --version", required: true),
-        Dependency(name: "Texinfo", brewPackage: "texinfo", checkCommand: nil, required: true),
-        Dependency(name: "Git", brewPackage: "git", checkCommand: "git --version", required: true),
+        Dependency(name: "Homebrew", brewPackage: "", checkCommand: "brew --version", requiredVersion: nil, required: true),
+        Dependency(name: "CMake", brewPackage: "cmake", checkCommand: "cmake --version", requiredVersion: nil, required: true),
+        Dependency(name: "Boost", brewPackage: "boost", checkCommand: nil, requiredVersion: nil, required: true),
+        Dependency(name: "GMP", brewPackage: "gmp", checkCommand: nil, requiredVersion: nil, required: true),
+        Dependency(name: "MPFR", brewPackage: "mpfr", checkCommand: nil, requiredVersion: nil, required: true),
+        Dependency(name: "MPC", brewPackage: "libmpc", checkCommand: nil, requiredVersion: nil, required: true),
+        // Bison: macOS ships with 2.3, but Retro68 needs 3.0.2+. Homebrew's is keg-only.
+        Dependency(name: "Bison", brewPackage: "bison", checkCommand: "/opt/homebrew/opt/bison/bin/bison --version", requiredVersion: "3.0.2", required: true),
+        Dependency(name: "Texinfo", brewPackage: "texinfo", checkCommand: nil, requiredVersion: nil, required: true),
+        Dependency(name: "Git", brewPackage: "git", checkCommand: "git --version", requiredVersion: nil, required: true),
     ]
 
     static var brewPackages: [String] {

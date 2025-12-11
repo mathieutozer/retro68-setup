@@ -62,32 +62,17 @@ struct InstallCommand: AsyncParsableCommand {
             return
         }
 
-        // Step 4: Build toolchain
+        // Step 4: Ask about Universal Interfaces BEFORE building
+        try await configureInterfacesPreBuild(noora: noora)
+
+        // Step 5: Build toolchain
         try await buildToolchain(noora: noora, targets: targets, rebuildOnly: rebuildOnly)
 
-        // Step 5: Save configuration
+        // Step 6: Save configuration
         var newConfig = Configuration.load()
         newConfig.installedAt = Date()
         newConfig.buildTargets = targets
         try newConfig.save()
-
-        // Step 6: Offer to configure interfaces
-        print("")
-        let configureInterfaces = noora.yesOrNoChoicePrompt(
-            title: "Universal Interfaces",
-            question: "Would you like to configure Universal Interfaces now?",
-            defaultAnswer: false,
-            description: "You can use the default Multiversal interfaces or add Apple's Universal Interfaces for better compatibility."
-        )
-
-        if configureInterfaces {
-            print("")
-            print(InterfaceManager.multiversalInfo)
-            print("")
-            print(InterfaceManager.appleInterfacesInfo)
-            print("")
-            print("Run 'retro68-setup interfaces add' when you have the files ready.")
-        }
 
         // Success!
         print("")
@@ -228,6 +213,129 @@ struct InstallCommand: AsyncParsableCommand {
         )
 
         return selected.map { $0.target }
+    }
+
+    private func configureInterfacesPreBuild(noora: Noora) async throws {
+        print("")
+        print("Universal Interfaces")
+        print("--------------------")
+        print("")
+
+        // Check if Apple interfaces are already in place
+        let interfacesPath = Paths.sourceDir.appendingPathComponent("InterfacesAndLibraries")
+        let existingVersion = detectAppleInterfacesVersion(at: interfacesPath)
+
+        if let version = existingVersion {
+            noora.success("Apple Universal Interfaces \(version) detected!")
+            print("  Location: \(interfacesPath.path)")
+            print("")
+            return
+        }
+
+        print("Retro68 needs API headers and libraries to compile Mac programs.")
+        print("You have two options:")
+        print("")
+        print("  1. Apple Universal Interfaces (recommended)")
+        print("     Full API coverage for all classic Mac development")
+        print("     Requires downloading MPW (Macintosh Programmer's Workshop)")
+        print("")
+        print("  2. Multiversal Interfaces")
+        print("     Open-source, included with Retro68")
+        print("     Limitation: No Carbon, MacTCP, OpenTransport, or post-System 7 APIs")
+        print("")
+
+        let useApple = noora.yesOrNoChoicePrompt(
+            title: "Interfaces",
+            question: "Do you want to use Apple Universal Interfaces?",
+            defaultAnswer: true,
+            description: "Recommended for full compatibility. Select No for open-source Multiversal."
+        )
+
+        if !useApple {
+            print("")
+            print("Using Multiversal Interfaces (open-source).")
+            print("You can add Apple interfaces later with: retro68-setup interfaces add")
+            print("")
+            return
+        }
+
+        // User wants Apple interfaces - guide them through setup
+        print("")
+        print("Apple Universal Interfaces Setup")
+        print("---------------------------------")
+        print("")
+        print("To use Apple's interfaces, you need to:")
+        print("")
+        print("  1. Download MPW (Macintosh Programmer's Workshop) Golden Master")
+        print("     - Search for 'MPW-GM.img.bin' or 'mpw-gm.img_.bin'")
+        print("     - Common sources: Archive.org, Macintosh Garden")
+        print("")
+        print("  2. Extract the disk image and find 'Interfaces&Libraries' folder")
+        print("     - On modern macOS, you may need an emulator to mount old disk images")
+        print("     - The folder should contain: Interfaces/, Libraries/, etc.")
+        print("")
+        print("  3. Copy/move the contents to:")
+        print("     \(interfacesPath.path)")
+        print("")
+        print("  Tip: You can do this now in another terminal window.")
+        print("")
+
+        let ready = noora.yesOrNoChoicePrompt(
+            title: "Ready",
+            question: "Have you placed the InterfacesAndLibraries contents in the location above?",
+            defaultAnswer: true,
+            description: "Select No to continue with Multiversal for now."
+        )
+
+        if ready {
+            // Check again for version
+            if let version = detectAppleInterfacesVersion(at: interfacesPath) {
+                noora.success("Apple Universal Interfaces \(version) detected!")
+                print("")
+            } else if Paths.exists(interfacesPath) {
+                // Folder exists but couldn't detect version
+                noora.success("InterfacesAndLibraries folder detected!")
+                print("  (Could not determine version)")
+                print("")
+            } else {
+                noora.warning("Folder not found at expected location. Continuing with Multiversal.")
+                print("You can add Apple interfaces later with: retro68-setup interfaces add")
+                print("")
+            }
+        } else {
+            print("")
+            print("Continuing with Multiversal Interfaces.")
+            print("You can add Apple interfaces later with: retro68-setup interfaces add")
+            print("")
+        }
+    }
+
+    /// Detects the version of Apple Universal Interfaces by parsing MacTypes.h
+    private func detectAppleInterfacesVersion(at path: URL) -> String? {
+        // Try common locations for MacTypes.h
+        let possiblePaths = [
+            path.appendingPathComponent("Interfaces/CIncludes/MacTypes.h"),
+            path.appendingPathComponent("CIncludes/MacTypes.h"),
+            path.appendingPathComponent("Interfaces/MacTypes.h")
+        ]
+
+        for macTypesPath in possiblePaths {
+            guard let content = try? String(contentsOf: macTypesPath, encoding: .utf8) else {
+                continue
+            }
+
+            // Look for: "Release:    Universal Interfaces 3.4"
+            if let range = content.range(of: "Universal Interfaces ") {
+                let startIndex = range.upperBound
+                let endIndex = content[startIndex...].firstIndex(where: { $0.isNewline || $0 == "*" }) ?? content.endIndex
+                let version = String(content[startIndex..<endIndex]).trimmingCharacters(in: .whitespaces)
+                if !version.isEmpty {
+                    return version
+                }
+            }
+        }
+
+        return nil
     }
 
     private func buildToolchain(noora: Noora, targets: [BuildTarget], rebuildOnly: Bool) async throws {
