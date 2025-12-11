@@ -104,18 +104,25 @@ struct InstallCommand: AsyncParsableCommand {
 
     private func checkDependencies(noora: Noora) async throws {
         print("Checking dependencies...")
-        print("")
 
         let checker = DependencyChecker()
 
         // First check Homebrew
+        print("  Checking Homebrew...", terminator: "")
+        fflush(stdout)
         let hasHomebrew = await checker.checkHomebrew()
         if !hasHomebrew {
+            print(" not found")
             noora.error("Homebrew is required but not installed. Please install it from https://brew.sh")
             throw ExitCode.failure
         }
+        print(" OK")
 
+        print("  Checking packages...", terminator: "")
+        fflush(stdout)
         let missing = await checker.getMissingDependencies()
+        print(" done")
+        print("")
 
         if missing.isEmpty {
             noora.success("All required dependencies are installed.")
@@ -201,7 +208,8 @@ struct InstallCommand: AsyncParsableCommand {
         print("")
         print("Select Build Targets")
         print("--------------------")
-        print("Choose which platforms you want to build for:")
+        print("Choose which platforms you want to build for.")
+        print("You can add more targets later with: retro68-setup install --rebuild-only")
         print("")
 
         struct TargetOption: CustomStringConvertible, Equatable {
@@ -215,7 +223,7 @@ struct InstallCommand: AsyncParsableCommand {
             title: "Build Targets",
             question: "Which platforms do you want to target?",
             options: options,
-            description: "Press SPACE to select targets, then ENTER to confirm.",
+            description: "Press SPACE to select, ENTER to confirm. You can add more later.",
             minLimit: .limited(count: 1, errorMessage: "You must select at least one target")
         )
 

@@ -27,7 +27,7 @@ actor ShellRunner {
 
     private init() {}
 
-    func run(_ command: String, at directory: URL? = nil, environment: [String: String]? = nil) async throws -> ShellResult {
+    func run(_ command: String, at directory: URL? = nil, environment: [String: String]? = nil, timeout: TimeInterval = 30) async throws -> ShellResult {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-c", command]
@@ -50,7 +50,17 @@ actor ShellRunner {
         process.standardError = stderrPipe
 
         try process.run()
-        process.waitUntilExit()
+
+        // Wait with timeout
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        }
+
+        if process.isRunning {
+            process.terminate()
+            return ShellResult(exitCode: -1, stdout: "", stderr: "Command timed out")
+        }
 
         let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
         let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
