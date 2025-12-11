@@ -53,9 +53,23 @@ actor ToolchainBuilder {
         onOutput("Starting toolchain build...\n")
         onOutput("Command: \(command)\n\n")
 
+        // Set environment variables to fix Boost detection issues on newer macOS/Homebrew
+        // Boost 1.69+ made boost::system header-only, but Retro68's CMake still looks for it
+        // Using legacy FindBoost module avoids this issue
+        var environment: [String: String] = [
+            "Boost_NO_BOOST_CMAKE": "ON",
+            "BOOST_ROOT": "/opt/homebrew"
+        ]
+
+        // Add Homebrew paths to help CMake find dependencies
+        if let existingPath = ProcessInfo.processInfo.environment["PATH"] {
+            environment["PATH"] = "/opt/homebrew/bin:/opt/homebrew/sbin:\(existingPath)"
+        }
+
         let exitCode = try await shell.runStreaming(
             command,
             at: Paths.buildDir,
+            environment: environment,
             onOutput: onOutput
         )
 

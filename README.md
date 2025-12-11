@@ -23,7 +23,7 @@ Setting up Retro68 from the official documentation can be confusing and involves
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/retro68-setup.git
+git clone https://github.com/mathieutozer/retro68-setup.git
 cd retro68-setup
 swift build -c release
 sudo cp .build/release/retro68-setup /usr/local/bin/
