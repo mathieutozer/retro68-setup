@@ -161,8 +161,60 @@ struct BuildCommand: AsyncParsableCommand {
             print("  \(output.path)")
         }
 
-        print("")
-        print("To run the application, transfer these files to a classic Mac or emulator.")
+        // Check if there's a shared folder configured for the appropriate emulator
+        let emuConfig = config.emulators
+        let sharedFolder: String?
+
+        switch buildTarget {
+        case .m68k:
+            sharedFolder = emuConfig?.basiliskSharedFolder
+        case .powerpc, .carbon:
+            sharedFolder = emuConfig?.sheepshaverSharedFolder
+        }
+
+        if let shared = sharedFolder, !outputs.isEmpty {
+            print("")
+            let copyToShared = noora.yesOrNoChoicePrompt(
+                title: "Copy",
+                question: "Copy build artifacts to shared folder?",
+                defaultAnswer: true,
+                description: "Files will be copied to: \(shared)"
+            )
+
+            if copyToShared {
+                let sharedURL = URL(fileURLWithPath: shared)
+                var copiedCount = 0
+
+                for output in outputs {
+                    let destURL = sharedURL.appendingPathComponent(output.lastPathComponent)
+
+                    // Remove existing file if present
+                    try? FileManager.default.removeItem(at: destURL)
+
+                    do {
+                        try FileManager.default.copyItem(at: output, to: destURL)
+                        copiedCount += 1
+                    } catch {
+                        noora.warning("Could not copy \(output.lastPathComponent): \(error.localizedDescription)")
+                    }
+                }
+
+                if copiedCount > 0 {
+                    print("")
+                    noora.success("Copied \(copiedCount) file(s) to shared folder!")
+                    print("")
+                    print("The files are now accessible from the emulator's 'Unix' disk.")
+
+                    let emulatorName = buildTarget == .m68k ? "BasiliskII" : "SheepShaver"
+                    print("Launch \(emulatorName) to run your application.")
+                }
+            }
+        } else if sharedFolder == nil {
+            print("")
+            print("Tip: Set up an emulator shared folder to easily transfer builds:")
+            print("  retro68-setup emulator guide")
+        }
+
         print("")
     }
 

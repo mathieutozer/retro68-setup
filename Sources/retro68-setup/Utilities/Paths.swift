@@ -10,6 +10,14 @@ enum Paths {
     static let interfacesDir = retro68Root.appendingPathComponent("interfaces")
     static let configFile = retro68Root.appendingPathComponent("config.json")
 
+    // Emulator paths
+    static let emulatorsDir = retro68Root.appendingPathComponent("emulators")
+    static let diskImagesDir = emulatorsDir.appendingPathComponent("disks")
+    static let osImagesDir = emulatorsDir.appendingPathComponent("os-images")
+    static let romDir = emulatorsDir.appendingPathComponent("rom")
+    static let basiliskPrefs = emulatorsDir.appendingPathComponent("basilisk_ii_prefs")
+    static let sheepshaverPrefs = emulatorsDir.appendingPathComponent("sheepshaver_prefs")
+
     static let gitRepoURL = "https://github.com/autc04/Retro68.git"
 
     static var samplesDir68K: URL {

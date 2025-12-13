@@ -11,6 +11,7 @@ struct Retro68Setup: AsyncParsableCommand {
             UninstallCommand.self,
             InterfacesCommand.self,
             BuildCommand.self,
+            EmulatorCommand.self,
             StatusCommand.self,
         ],
         defaultSubcommand: StatusCommand.self
